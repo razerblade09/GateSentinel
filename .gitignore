@@ -1,0 +1,43 @@
+# Machine-specific configuration. Never commit -- it holds local paths,
+# the camera source, and anything you would otherwise be tempted to hardcode.
+configs/local.yaml
+.env
+
+# Datasets and model weights. Both are far too large for git; version them with
+# DVC or a release artifact instead.
+data/
+models/
+outputs/
+runs/
+*.pt
+*.onnx
+*.weights
+*.xml
+*.bin
+
+# Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gatesentinel"
+version = "0.1.0"
+description = "GateSentinel — Automatic license plate recognition for gate access control"
+requires-python = ">=3.10"
+
+# Floors only, no invented ceilings. The failure that stops the previous version
+# of this project is not "NumPy 2.x is bad" -- it is an *inconsistent* set: NumPy
+# 2.0 against an OpenCV wheel compiled for the 1.x ABI. Modern OpenCV and Torch
+# support NumPy 2 fine. Guessing a ceiling here would just trade one resolution
+# conflict for another.
+#
+# The real guarantee comes from requirements.lock.txt, which records the exact
+# versions that were installed and verified to import together.
+dependencies = [
+    "numpy>=1.26",
+    # opencv-contrib-python, NOT opencv-python. Both install a module named
+    # `cv2`; with both present, which one wins depends on install order, and
+    # PaddleOCR pulls in contrib regardless. Contrib is a strict superset, so
+    # depending on it directly keeps exactly one cv2 in the environment.
+    "opencv-contrib-python>=4.10",
+    "pydantic>=2.6,<3.0",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0,<3.0",
+    "ultralytics>=8.3",
+]
+
+[project.optional-dependencies]
+ocr = ["paddleocr>=3.0", "paddlepaddle>=3.0", "pytesseract>=0.3.10"]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+export = ["onnx>=1.16", "onnxruntime>=1.17", "openvino>=2024.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.9",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 90
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["alpr"]
+strict = true
+warn_unused_ignores = true
