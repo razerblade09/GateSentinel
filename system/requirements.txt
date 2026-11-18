@@ -1,0 +1,17 @@
+# Core dependencies
+PyQt5==5.15.9
+opencv-python==4.8.1.78
+requests==2.31.0
+numpy==1.26.0
+pytesseract==0.3.10
+ultralytics==8.0.203
+Flask==3.0.0
+pytz==2023.3.post1
+pandas==2.1.1
+APScheduler==3.10.4
+XlsxWriter==3.1.9
+
+# Additional notes:
+# 1. Tesseract OCR engine must be installed separately from https://github.com/UB-Mannheim/tesseract/wiki
+# 2. For CUDA acceleration, install appropriate PyTorch version from https://pytorch.org/
+# 3. Ensure Visual C++ Redistributable is installed on Windows systems

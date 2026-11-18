@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Database (contains personal/sensitive data — keep local)
+*.db
+*.sqlite3
+
+# Logs and temp
+*.log
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Ultralytics settings (machine-specific)
+settings.yaml
+
+# Large binary model weights (too large for GitHub — >100MB)
+system/yolov4.weights
+
+# Training dataset (945 MB — too large for GitHub)
+data/
+
+# Training run artifacts — keep only the best model weights
+runs/
+!runs/detect/
+!runs/detect/train16/
+!runs/detect/train16/weights/
+!runs/detect/train16/weights/best.pt

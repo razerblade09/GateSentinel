@@ -1,0 +1,6 @@
+path: C:\Users\USER\Documents\Latest_LPR\data
+train: images\train
+val:  images\train
+
+names:
+  0: License_Plate
