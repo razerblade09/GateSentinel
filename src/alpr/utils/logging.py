@@ -73,6 +73,24 @@ def configure_logging(config: LoggingConfig) -> None:
     _configured = True
 
 
+def setup_logging(level: str = "INFO") -> None:
+    """Lightweight logging setup for CLI scripts.
+
+    Scripts that do not load a full ``AppConfig`` (e.g. ``export.py``) can
+    call this instead of ``configure_logging``.  It installs a plain stderr
+    handler at the requested level and nothing else.
+
+    Args:
+        level: One of ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``.
+    """
+    root = logging.getLogger()
+    root.setLevel(level)
+    if not root.handlers:
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter(_PLAIN_FORMAT, datefmt=_DATE_FORMAT))
+        root.addHandler(handler)
+
+
 def get_logger(name: str) -> logging.Logger:
     """Return the logger for ``name``, conventionally the module's ``__name__``."""
     return logging.getLogger(name)

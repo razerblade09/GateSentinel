@@ -1,0 +1,51 @@
+services:
+  gatesentinel:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: gatesentinel:latest
+    container_name: gatesentinel
+
+    restart: unless-stopped
+
+    # Camera device access — adjust the device path for your hardware.
+    # USB cameras typically appear as /dev/video0 or /dev/video1.
+    # RTSP cameras don't need a device mapping; set camera.source in
+    # configs/local.yaml instead (e.g. "rtsp://192.168.1.100:554/stream").
+    devices:
+      - /dev/video0:/dev/video0
+
+    volumes:
+      # Models: bind the directory containing .pt / OpenVINO IR directories.
+      - ../models:/app/models:ro
+      # Database and logs: writable, persist across container restarts.
+      - ../data:/app/data
+      - ../logs:/app/logs
+      # Local config: machine-specific overrides (camera source, model paths).
+      # Create this file on the gate machine; it is git-ignored.
+      - ../configs/local.yaml:/app/configs/local.yaml:ro
+
+    environment:
+      # Override any config key without editing files.
+      # Format: ALPR__SECTION__KEY=value
+      # Examples:
+      #   ALPR__RUNTIME__DEVICE: openvino
+      #   ALPR__CAMERA__SOURCE: "rtsp://192.168.1.100:554/stream"
+      ALPR__LOGGING__LEVEL: INFO
+
+    # Cap resource usage so the gate controller stays responsive.
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+    # Write logs as plain text to stdout; Docker captures and rotates them.
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

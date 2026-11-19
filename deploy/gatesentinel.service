@@ -1,0 +1,51 @@
+[Unit]
+Description=GateSentinel ALPR — Automatic License Plate Recognition for Gate Access Control
+Documentation=https://github.com/razerblade09/GateSentinel
+After=network.target
+# If you use a USB camera that takes a moment to register, add:
+# After=dev-video0.device
+# Wants=dev-video0.device
+
+[Service]
+Type=simple
+
+# Run as a dedicated non-root user for security.
+# Create with: sudo useradd --system --no-create-home gatesentinel
+User=gatesentinel
+Group=gatesentinel
+
+# Adjust this to wherever you cloned / installed the project.
+WorkingDirectory=/opt/gatesentinel
+
+# Activate the project venv before running.
+Environment="PATH=/opt/gatesentinel/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Optional: override config values without editing files.
+# Environment="ALPR__CAMERA__SOURCE=rtsp://192.168.1.100:554/stream"
+# Environment="ALPR__RUNTIME__DEVICE=openvino"
+
+ExecStart=/opt/gatesentinel/.venv/bin/python scripts/run.py --profile deploy
+
+# Restart policy: restart after 5 s on any failure.
+# At a gate, a crashed process that never restarts is worse than one that
+# briefly blips and comes back.
+Restart=on-failure
+RestartSec=5s
+
+# Give the process up to 30 s to shut down gracefully (flush the DB, close
+# the camera) before systemd sends SIGKILL.
+TimeoutStopSec=30s
+
+# Log to journal (use: journalctl -u gatesentinel -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gatesentinel
+
+# Limit resource usage on shared / low-spec hardware.
+# Adjust CPUQuota if you need more headroom for GPU inference.
+CPUQuota=200%
+MemoryMax=1G
+MemorySwapMax=0
+
+[Install]
+WantedBy=multi-user.target
