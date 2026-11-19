@@ -1,0 +1,54 @@
+# GateSentinel — production deployment configuration
+#
+# This profile is merged ON TOP of configs/default.yaml on the gate machine.
+# Only values that differ from the development defaults are set here.
+# To inspect the final merged config:
+#
+#   python scripts/show_config.py --profile deploy
+#
+# Key differences from the development default
+# ---------------------------------------------
+# 1. device: openvino — After exporting with scripts/export.py, the OpenVINO
+#    runtime runs 2-4x faster than PyTorch CPU on Intel Celeron/Atom hardware.
+# 2. max_fps capped at 10 — A gate does not need high frame rates. Capping
+#    frees CPU for the OS, the database writer, and the gate relay driver.
+# 3. Weights point to the OpenVINO IR directories — Set these to the actual
+#    paths after running scripts/export.py on the deployment machine.
+# 4. log format: json — Structured logs are easier to ingest into journald,
+#    Loki, or any other log aggregator on the gate machine.
+# 5. Stricter OCR thresholds — Higher confidence requirements reduce false
+#    opens at the cost of occasionally re-reading a plate. At a gate, a
+#    spurious open is worse than a brief delay.
+
+runtime:
+  device: openvino
+  half: false          # FP16 only helps on Intel GPU; most gate boards are CPU-only
+  max_fps: 10.0        # 10 fps is plenty for a vehicle moving at walking speed
+
+vehicle_detector:
+  weights: models/yolo26n_openvino_model   # IR directory from scripts/export.py
+  confidence: 0.45                         # slightly tighter than dev default (0.40)
+
+plate_detector:
+  weights: models/plate_yolo26s_openvino_model
+  confidence: 0.40                         # slightly tighter than dev default (0.35)
+
+ocr:
+  engine: paddleocr
+  min_char_confidence: 0.60                # was 0.50 — fewer bad characters logged
+  min_string_confidence: 0.70             # was 0.60 — tighter string acceptance
+
+tracking:
+  min_reads_for_vote: 5                    # was 3 — more evidence before opening gate
+  max_reads_per_track: 20                  # was 15 — allows more evidence accumulation
+  track_timeout_s: 6.0                     # was 5.0 — slightly longer grace period
+
+database:
+  url: sqlite:///data/alpr.db
+  wal: true                                # mandatory for concurrent capture + API reads
+  echo: false
+
+logging:
+  level: INFO
+  format: json                             # structured logs for journald / Loki ingestion
+  file: logs/gatesentinel.log              # also write to rotating file

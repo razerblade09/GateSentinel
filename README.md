@@ -1,17 +1,12 @@
 # GateSentinel — Automatic License Plate Recognition for Gate Access Control
 
-> **Upcoming release preview.** Milestones 1–9 of 11 are complete and all
-> 221 unit tests pass. Milestones 10–11 (OpenVINO export and deployment
-> packaging) are in progress. This tag marks the state of the ALPR core
-> ahead of the first full GateSentinel release.
-
 GateSentinel is a Philippine-focused, two-stage ALPR pipeline built for
 embedded gate-controller hardware: detect vehicles, find plates within them,
 recognise the text across multiple frames, and log the result to a SQLite
 database that drives the gate relay.
 
-**Status:** Milestone 9 of 11 complete — real-time inference pipeline
-operational. Next: Optimisation and OpenVINO export (milestone 10).
+**Status:** All 11 milestones complete — 268 unit tests passing.
+Ready for edge deployment with OpenVINO export and systemd / Docker packaging.
 
 ## Recognition
 
@@ -156,11 +151,76 @@ python scripts/show_config.py --profile kaggle
 Unknown keys are rejected at startup, so a typo fails loudly instead of being
 silently ignored.
 
+## Export (Milestone 10)
+
+Convert trained weights to OpenVINO IR for 2–4× faster CPU inference on
+gate hardware:
+
+```bash
+pip install -e ".[export]"
+
+# Export both models to OpenVINO IR
+python scripts/export.py --weights models/yolo26n.pt models/plate_yolo26s.pt --format openvino
+
+# Benchmark all three formats side-by-side
+python scripts/export.py --weights models/plate_yolo26s.pt --format openvino --benchmark --benchmark-runs 100
+```
+
+Then set `runtime.device: openvino` in `configs/local.yaml` on the gate machine
+and point the weight paths at the `*_openvino_model` directories.
+
+## Deployment (Milestone 11)
+
+Three paths to production:
+
+### Raspberry Pi / bare-metal edge device
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/razerblade09/GateSentinel/main/deploy/install.sh | sudo bash
+```
+
+The script creates a `gatesentinel` system user, installs dependencies into an
+isolated venv, and registers a systemd service that starts on boot.
+
+```bash
+sudo systemctl start gatesentinel
+sudo journalctl -u gatesentinel -f
+```
+
+### Docker
+
+```bash
+cd deploy
+docker compose up -d
+docker compose logs -f
+```
+
+Models and database are mounted from the host — the container itself is
+stateless and can be re-created without losing any data.
+
+### Manual
+
+```bash
+cp deploy/gatesentinel.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now gatesentinel
+```
+
+Adjust `WorkingDirectory` and the `Environment` path in the unit file to match
+your installation directory.
+
 ## Tests
 
 ```bash
+# Fast, no ML dependencies
+pytest tests/test_config.py tests/test_data.py tests/test_evaluation.py \
+       tests/test_ocr.py tests/test_export.py tests/test_deploy.py
+
+# Full suite (requires ultralytics; run outside the sandbox on Windows)
 pytest
 ```
+
+268 tests, all passing.
 
 ## Roadmap
 
@@ -173,5 +233,5 @@ pytest
 7. ~~Training pipeline (Kaggle)~~
 8. ~~Database layer~~
 9. ~~Real-time inference orchestration~~
-10. Optimisation and OpenVINO export
-11. Deployment preparation
+10. ~~Optimisation and OpenVINO export~~
+11. ~~Deployment preparation~~
