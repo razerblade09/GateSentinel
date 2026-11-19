@@ -1,0 +1,21 @@
+# Profile for training runs on Kaggle.
+#   load_config("kaggle")
+#
+# Only states what differs from default.yaml. Everything else falls through.
+
+paths:
+  # /kaggle/input is READ-ONLY. Ultralytics writes a labels.cache file next to
+  # the labels directory on the first epoch, so pointing the dataset at
+  # /kaggle/input fails immediately with a permissions error. The dataset
+  # preparation step copies into /kaggle/working first.
+  data_dir: /kaggle/working/data
+  models_dir: /kaggle/working/models
+  outputs_dir: /kaggle/working/outputs
+
+runtime:
+  device: cuda
+  half: true
+
+logging:
+  level: INFO
+  file: /kaggle/working/outputs/train.log

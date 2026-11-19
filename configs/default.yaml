@@ -1,0 +1,114 @@
+# Baseline configuration. Committed to version control.
+#
+# This file documents every setting the system understands and the value it
+# takes unless something overrides it. Do not put machine-specific paths or
+# secrets here -- use configs/local.yaml (gitignored) or ALPR__* env vars.
+#
+# Precedence, lowest to highest:
+#   default.yaml -> <profile>.yaml -> local.yaml -> ALPR__* env -> CLI overrides
+
+paths:
+  # Relative values are resolved against the project root (the directory
+  # containing pyproject.toml), so this file is portable across machines.
+  data_dir: data
+  models_dir: models
+  outputs_dir: outputs
+
+runtime:
+  # "auto" picks CUDA when available and falls back to CPU.
+  # Use "openvino" on the Intel-graphics gate machine after exporting.
+  device: auto
+  half: false
+  max_fps: 15.0
+
+camera:
+  # "0" or "1" for a USB device index; a file path for testing;
+  # an rtsp:// URL for an IP camera. Override in local.yaml.
+  source: "0"
+  width: null
+  height: null
+  fps: null
+  reconnect_delay_s: 3.0
+
+vehicle_detector:
+  # Stage one. Uses COCO-pretrained weights, so it needs no training.
+  # Set enabled:false to compare against single-stage full-frame detection.
+  enabled: true
+  weights: yolo26n.pt
+  confidence: 0.40
+  iou: 0.50
+  imgsz: 640
+  classes: [2, 3, 5, 7] # COCO: car, motorcycle, bus, truck
+  box_padding: 0.10
+
+plate_detector:
+  # Stage two. These weights do not exist yet -- they are produced by the
+  # training milestone. Swap to a YOLO11 checkpoint here if YOLO26 tooling
+  # proves troublesome; no code changes are required.
+  weights: plate_yolo26s.pt
+  confidence: 0.35
+  iou: 0.50
+  imgsz: 640
+  max_plates_per_vehicle: 2
+
+tracking:
+  # Multi-frame voting. Requires vehicle_detector.enabled.
+  enabled: true
+  tracker: bytetrack.yaml
+  min_reads_for_vote: 3
+  max_reads_per_track: 15
+  track_timeout_s: 5.0
+
+ocr:
+  engine: paddleocr
+  lang: en
+  use_angle_cls: true
+  min_char_confidence: 0.50
+  min_string_confidence: 0.60
+  handle_two_line_plates: true
+  two_line_aspect_threshold: 2.0
+
+plate_format:
+  region: PH
+  # Slot templates: L = letter position, D = digit position.
+  # A Philippine car plate is three letters then four digits.
+  formats:
+    car: LLLDDDD
+    motorcycle_new: DDDLLL
+    motorcycle_alt: DDDDLL
+    motorcycle_old: LLDDDDD
+  # Reject reads needing more substitutions than this -- unbounded correction
+  # turns noise into plausible-looking plates, which is worse at a gate than
+  # admitting the read failed.
+  max_corrections: 2
+  correction_penalty: 0.85
+  # Applied positionally: in a slot that must be a digit, map these letters.
+  letter_to_digit:
+    O: "0"
+    Q: "0"
+    I: "1"
+    L: "1"
+    Z: "2"
+    S: "5"
+    B: "8"
+    G: "6"
+  # And the reverse, in slots that must be letters.
+  digit_to_letter:
+    "0": O
+    "1": I
+    "2": Z
+    "5": S
+    "8": B
+    "6": G
+
+database:
+  # A SQLAlchemy URL, not a file path. Moving to PostgreSQL later means
+  # changing this string, not rewriting the data layer.
+  url: sqlite:///data/alpr.db
+  echo: false
+  wal: true
+
+logging:
+  level: INFO
+  file: null
+  format: plain
