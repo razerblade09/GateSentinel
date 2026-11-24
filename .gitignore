@@ -36,8 +36,15 @@ Thumbs.db
 # Ultralytics settings (machine-specific)
 settings.yaml
 
-# Large binary model weights (too large for GitHub — >100MB)
+# Large binary model weights
 system/yolov4.weights
+models/*.pt
+*.pt
+
+# Outputs & temporary camera captures
+outputs/*.jpg
+outputs/*.png
+configs/local.yaml
 
 # Training dataset (945 MB — too large for GitHub)
 data/
